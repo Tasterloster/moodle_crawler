@@ -69,6 +69,7 @@ try {
   const logs = [];
 
   w.eval(fs.readFileSync("lib/zip.js", "utf8"));
+  w.eval(fs.readFileSync("lib/i18n.js", "utf8"));
   w.eval(fs.readFileSync("lib/crawler.js", "utf8"));
 
   const detected = w.MoodleCrawler.inspect(w.document, `${BASE}/course/view.php?id=2`);
@@ -83,7 +84,7 @@ try {
     rootUrl: `${BASE}/course/view.php?id=2`,
     options: {
       files: true, texts: true, images: true, forums: true, submissions: true,
-      allSections: true, format: "both", maxFileMB: 0, delay: 0,
+      allSections: true, format: "both", language: "de", maxFileMB: 0, delay: 0,
     },
     onEvent: (type, payload) => {
       if (type === "log") logs.push(`${payload.level}: ${payload.message}`);
@@ -288,13 +289,14 @@ print(json.dumps({"bad": bad, "names": names, "texts": texts, "blobs": blobs}))
   // ------------------------------------------------------------------
   // Durchlauf C: alle Kurse in ein Archiv, ohne eigene Abgaben
   // ------------------------------------------------------------------
-  console.log("\n— Alle Kurse, ohne eigene Abgaben —");
+  console.log("\n— Alle Kurse, englisch, ohne eigene Abgaben —");
   captured = null;
   const multi = await w.MoodleCrawler.run({
     courses: found.courses,
     options: {
       files: true, texts: true, images: true, forums: false, submissions: false,
-      allSections: true, format: "md", combine: "single", maxFileMB: 0, delay: 0,
+      allSections: true, format: "md", combine: "single", language: "en",
+      maxFileMB: 0, delay: 0,
     },
     onEvent: () => {},
     download: (blob, filename) => {
@@ -303,8 +305,8 @@ print(json.dumps({"bad": bad, "names": names, "texts": texts, "blobs": blobs}))
     },
   });
 
-  check("Ein gemeinsames Archiv für alle Kurse",
-    (multi.archives || []).length === 1 && /^Moodle-Kurse \d{4}-\d{2}-\d{2}\.zip$/.test(multi.filename),
+  check("Ein gemeinsames Archiv für alle Kurse, englisch benannt",
+    (multi.archives || []).length === 1 && /^Moodle courses \d{4}-\d{2}-\d{2}\.zip$/.test(multi.filename),
     multi.filename);
 
   const multiPath = path.join(outDir, "alle-kurse.zip");
@@ -320,11 +322,12 @@ print(json.dumps({"bad": bad, "names": names, "texts": texts, "blobs": blobs}))
     multiHas("Einführung in die Informatik/") && multiHas("Mathematik 1/"),
     [...new Set(multiNames.map((n) => n.split("/")[0]))].join(" | "));
   check("Übersicht über alle Kurse vorhanden",
-    multiHas("Alle Kurse.md") &&
-    multiZip.texts["Alle Kurse.md"].includes("Mathematik 1") &&
-    multiZip.texts["Alle Kurse.md"].includes("Einführung in die Informatik"));
+    multiHas("All courses.md") &&
+    multiZip.texts["All courses.md"].includes("Mathematik 1") &&
+    multiZip.texts["All courses.md"].includes("Einführung in die Informatik"));
   check("Inhalte des zweiten Kurses gesichert",
-    multiHas("Mathematik 1/01 Zahlenbereiche/01 Mengenlehre.md"),
+    multiHas("Mathematik 1/01 Zahlenbereiche/01 Mengenlehre.md") &&
+    multiHas("Mathematik 1/Course overview.md") && multiHas("Mathematik 1/Course texts.md"),
     multiNames.filter((n) => n.startsWith("Mathematik 1/")).join(" | "));
 
   check("Arbeitsblatt des Lehrenden ist dabei", multiHas("Aufgabenblatt.pdf"));
@@ -333,6 +336,27 @@ print(json.dumps({"bad": bad, "names": names, "texts": texts, "blobs": blobs}))
   check("Feedbackdatei wurde NICHT geladen", !multiHas("Korrektur.pdf"));
   check("Bewertung taucht nirgends im Text auf",
     !Object.values(multiZip.texts).some((t) => t.includes("87 von 100")));
+
+  // Sprachumschaltung wirkt bis in Dateinamen, Ordner und Frontmatter hinein.
+  const multiTextOf = (needle) => {
+    const key = Object.keys(multiZip.texts).find((n) => n.includes(needle));
+    return key ? multiZip.texts[key] : "";
+  };
+  check("Bilderordner trägt den englischen Namen",
+    multiHas("/_images/banner.png") && !multiNames.some((n) => n.includes("_bilder")),
+    multiNames.filter((n) => n.includes("_image") || n.includes("_bilder")).join(" | "));
+  const noteEn = multiTextOf("01 Mengenlehre.md");
+  check("Frontmatter ist englisch",
+    /\ncourse: "Mathematik 1"/.test(noteEn) && /\ntype: "Page"/.test(noteEn) &&
+    /\nsource: "/.test(noteEn) && /\nsaved: \d{4}/.test(noteEn),
+    noteEn.split("---")[1] ? noteEn.split("---")[1].trim().replace(/\n/g, " | ") : "kein Frontmatter");
+  check("Abschnittstext heißt englisch",
+    multiHas("00 Section text.md") && !multiNames.some((n) => n.includes("Abschnittstext")));
+  check("Übersichten nutzen englische Überschriften",
+    multiTextOf("Mathematik 1/README.md").includes("## Contents") &&
+    multiTextOf("All courses.md").includes("# Saved courses"));
+  check("Deutscher Durchlauf blieb deutsch",
+    has("/_bilder/banner.png") && has("00 Abschnittstext.md") && has("Kursübersicht.md"));
 
   console.log(`\n${multiNames.length} Einträge im Sammelarchiv, ${(fs.statSync(multiPath).size / 1024).toFixed(1)} KB`);
   fs.rmSync(inspector, { force: true });

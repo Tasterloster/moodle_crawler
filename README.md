@@ -1,6 +1,7 @@
 # Moodle Crawler
 
-Firefox-Erweiterung, die einen kompletten Moodle-Kurs sichert: **alle Dateien,
+Deutsch- und englischsprachige Firefox-Erweiterung, die einen kompletten
+Moodle-Kurs sichert: **alle Dateien,
 alle Texte, alle Links und alle im Kurs eingebetteten Bilder** landen in einer
 einzigen ZIP-Datei — sortiert nach Kursabschnitten, offline lesbar und
 standardmäßig als **Markdown für Obsidian**.
@@ -221,8 +222,37 @@ bleiben.
 | Alle Abschnittsseiten durchsuchen | an | Nötig bei Kursformaten mit einer Seite je Abschnitt |
 | Format | Markdown | Markdown (Obsidian), HTML oder beides |
 | Mehrere Kurse | Ein Archiv pro Kurs | Nur im Modus „Alle meine Kurse" |
+| Sprache | Automatisch | Deutsch oder English – siehe unten |
 | Max. Dateigröße | 0 (unbegrenzt) | Überspringt Dateien oberhalb der Grenze |
 | Pause je Anfrage | 150 ms | Schont den Moodle-Server; höher = langsamer, aber sanfter |
+
+## Sprache
+
+Die Einstellung **Sprache** schaltet zwischen Deutsch und English um; auf
+*Automatisch* richtet sie sich nach der Sprache deines Firefox. Sie betrifft
+nicht nur die Oberfläche, sondern **auch das erzeugte Archiv**:
+
+| | Deutsch | English |
+| --- | --- | --- |
+| Übersicht | `Kursübersicht.md` | `Course overview.md` |
+| Texte | `Kurs-Texte.md` | `Course texts.md` |
+| Bilder | `_bilder/` | `_images/` |
+| Abschnittstext | `00 Abschnittstext.md` | `00 Section text.md` |
+| Eigene Abgaben | `… - Meine Abgabe/` | `… - My submission/` |
+| Sammelarchiv | `Alle Kurse.md` | `All courses.md` |
+| Frontmatter | `kurs:`, `typ:`, `quelle:`, `gesichert:` | `course:`, `type:`, `source:`, `saved:` |
+| Typbezeichnung | `Textseite`, `Aufgabe`, `Buch` | `Page`, `Assignment`, `Book` |
+
+Namen, die aus Moodle stammen — Kurs-, Abschnitts- und Aktivitätsnamen —
+bleiben selbstverständlich unverändert.
+
+Wer seine Notizen in Obsidian nach `type` filtert, sollte die Sprache also
+einmal festlegen und dabei bleiben, sonst entstehen zwei Sätze von
+Frontmatter-Feldern.
+
+Der Name und die Beschreibung der Erweiterung selbst (in `about:addons`)
+folgen weiterhin der Firefox-Oberflächensprache; das legt Firefox über
+`_locales/` fest und lässt sich nicht im Add-on umschalten.
 
 ## Hinweise und Grenzen
 
@@ -257,6 +287,7 @@ erfragt, auf dem dein Kurs liegt.
 ```
 manifest.json            Manifest (MV2, Firefox 115+)
 popup/                   Oberfläche der Erweiterung
+lib/i18n.js              Sprachtabelle für Oberfläche und Archivinhalte
 lib/zip.js               ZIP-Writer (Deflate + ZIP64, ohne Fremdbibliothek)
 lib/crawler.js           Kurs-Erkennung, Kursliste, Scraping, Markdown, Archivaufbau
 background/              Hintergrundseite: führt den Lauf unabhängig vom Tab aus
@@ -276,14 +307,15 @@ npm install jsdom      # nur für den End-to-End-Test nötig
 ./test/run.sh
 ```
 
-* `structure.test.mjs` — Manifest, Berechtigungen und referenzierte Dateien
+* `structure.test.mjs` — Manifest, Berechtigungen, referenzierte Dateien und
+  Vollständigkeit beider Sprachtabellen
 * `zip.test.mjs` — schreibt ein Archiv und lässt es von Pythons `zipfile`
   gegenprüfen (Inhalte, UTF-8-Namen, Kompression)
 * `e2e.test.mjs` — startet einen Fake-Moodle-Server mit Moodle-4-DOM, lässt den
   echten Crawler in jsdom durchlaufen und prüft das erzeugte ZIP: Dateien
   hinter Weiterleitungen, Ordner, Buchkapitel, Foren, Bilder, Markdown-Umwandlung
   und die gesammelten Links; dazu die Kurserkennung und ein Durchlauf über
-  mehrere Kurse ohne eigene Abgaben
+  mehrere Kurse ohne eigene Abgaben, einmal auf Deutsch und einmal auf Englisch
 
 ### Paket bauen
 

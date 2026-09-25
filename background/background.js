@@ -78,6 +78,8 @@ function startRun({ course, courses, options }) {
 api.runtime.onMessage.addListener((msg) => {
   if (!msg || !msg.to || msg.to !== "background") return undefined;
 
+  if (msg.language) window.MoodleCrawlerI18n.setLanguage(msg.language);
+
   if (msg.cmd === "probe") {
     return window.MoodleCrawler.probe(msg.courseUrl);
   }

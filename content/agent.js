@@ -61,6 +61,8 @@
   api.runtime.onMessage.addListener((msg) => {
     if (!msg || msg.to !== "tab") return undefined;
 
+    if (msg.language) window.MoodleCrawlerI18n.setLanguage(msg.language);
+
     if (msg.cmd === "inspect") {
       const info = crawler.inspect(document, location.href);
       return Promise.resolve({ ...info, running: crawler.isRunning() });

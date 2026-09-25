@@ -11,7 +11,7 @@
     <h1>Moodle Crawler</h1>
   </header>
 
-  <div id="status" class="status status--wait">Kursseite wird geprüft …</div>
+  <div id="status" class="status status--wait" data-i18n="ui.checking">Kursseite wird geprüft …</div>
 
   <section id="course" class="course" hidden>
     <strong id="course-name"></strong>
@@ -19,56 +19,64 @@
   </section>
 
   <section id="scope" class="scope" hidden>
-    <label><input type="radio" name="scope" value="current" checked> Nur dieser Kurs</label>
-    <label><input type="radio" name="scope" value="all"> Alle meine Kurse</label>
+    <label><input type="radio" name="scope" value="current" checked> <span data-i18n="ui.scopeCurrent">Nur dieser Kurs</span></label>
+    <label><input type="radio" name="scope" value="all"> <span data-i18n="ui.scopeAll">Alle meine Kurse</span></label>
   </section>
 
   <section id="courselist" class="courselist" hidden>
     <div class="courselist-head">
       <span id="courselist-count" class="muted"></span>
-      <button type="button" id="toggle-all" class="link">alle ab-/auswählen</button>
+      <button type="button" id="toggle-all" class="link" data-i18n="ui.toggleAll">alle ab-/auswählen</button>
     </div>
     <div id="courselist-items"></div>
   </section>
 
   <section id="options" class="options" hidden>
-    <label><input type="checkbox" id="opt-files" checked> Dateien herunterladen <span class="muted">(PDFs, Ordner, Anhänge)</span></label>
-    <label><input type="checkbox" id="opt-texts" checked> Texte &amp; Seiten speichern</label>
-    <label><input type="checkbox" id="opt-images" checked> Bilder aus Texten mitladen</label>
-    <label><input type="checkbox" id="opt-submissions" checked> Eigene Abgaben &amp; Feedback <span class="muted">(deine Uploads, Bewertungen)</span></label>
-    <label><input type="checkbox" id="opt-forums"> Forenbeiträge einbeziehen <span class="muted">(langsam)</span></label>
-    <label><input type="checkbox" id="opt-allsections" checked> Alle Abschnittsseiten durchsuchen</label>
+    <label><input type="checkbox" id="opt-files" checked> <span data-i18n="ui.optFiles">Dateien herunterladen</span> <span class="muted" data-i18n="ui.optFilesHint">(PDFs, Ordner, Anhänge)</span></label>
+    <label><input type="checkbox" id="opt-texts" checked> <span data-i18n="ui.optTexts">Texte &amp; Seiten speichern</span></label>
+    <label><input type="checkbox" id="opt-images" checked> <span data-i18n="ui.optImages">Bilder aus Texten mitladen</span></label>
+    <label><input type="checkbox" id="opt-submissions" checked> <span data-i18n="ui.optSubmissions">Eigene Abgaben &amp; Feedback</span> <span class="muted" data-i18n="ui.optSubmissionsHint">(deine Uploads, Bewertungen)</span></label>
+    <label><input type="checkbox" id="opt-forums"> <span data-i18n="ui.optForums">Forenbeiträge einbeziehen</span> <span class="muted" data-i18n="ui.optForumsHint">(langsam)</span></label>
+    <label><input type="checkbox" id="opt-allsections" checked> <span data-i18n="ui.optAllSections">Alle Abschnittsseiten durchsuchen</span></label>
 
     <div class="row">
-      <label class="inline" for="opt-format">Format</label>
+      <label class="inline" for="opt-format" data-i18n="ui.optFormat">Format</label>
       <select id="opt-format">
-        <option value="md">Markdown (Obsidian)</option>
-        <option value="html">HTML</option>
-        <option value="both">Markdown + HTML</option>
+        <option value="md" data-i18n="ui.optFormatMd">Markdown (Obsidian)</option>
+        <option value="html" data-i18n="ui.optFormatHtml">HTML</option>
+        <option value="both" data-i18n="ui.optFormatBoth">Markdown + HTML</option>
       </select>
     </div>
     <div class="row" id="row-combine" hidden>
-      <label class="inline" for="opt-combine">Mehrere Kurse</label>
+      <label class="inline" for="opt-combine" data-i18n="ui.optCombine">Mehrere Kurse</label>
       <select id="opt-combine">
-        <option value="separate">Ein Archiv pro Kurs</option>
-        <option value="single">Alles in einem Archiv</option>
+        <option value="separate" data-i18n="ui.optCombineSeparate">Ein Archiv pro Kurs</option>
+        <option value="single" data-i18n="ui.optCombineSingle">Alles in einem Archiv</option>
       </select>
     </div>
     <div class="row">
-      <label class="inline" for="opt-maxsize">Max. Dateigröße</label>
-      <input type="number" id="opt-maxsize" min="0" step="10" value="0">
-      <span class="muted">MB (0 = unbegrenzt)</span>
+      <label class="inline" for="opt-language" data-i18n="ui.optLanguage">Sprache</label>
+      <select id="opt-language">
+        <option value="auto" data-i18n="ui.langAuto">Automatisch</option>
+        <option value="de" data-i18n="ui.langDe">Deutsch</option>
+        <option value="en" data-i18n="ui.langEn">English</option>
+      </select>
     </div>
     <div class="row">
-      <label class="inline" for="opt-delay">Pause je Anfrage</label>
+      <label class="inline" for="opt-maxsize" data-i18n="ui.optMaxSize">Max. Dateigröße</label>
+      <input type="number" id="opt-maxsize" min="0" step="10" value="0">
+      <span class="muted" data-i18n="ui.optMaxSizeHint">MB (0 = unbegrenzt)</span>
+    </div>
+    <div class="row">
+      <label class="inline" for="opt-delay" data-i18n="ui.optDelay">Pause je Anfrage</label>
       <input type="number" id="opt-delay" min="0" step="50" value="150">
-      <span class="muted">ms</span>
+      <span class="muted" data-i18n="ui.optDelayHint">ms</span>
     </div>
   </section>
 
   <div class="actions">
-    <button id="start" disabled>Kurs herunterladen</button>
-    <button id="cancel" class="secondary" hidden>Abbrechen</button>
+    <button id="start" disabled data-i18n="ui.download">Kurs herunterladen</button>
+    <button id="cancel" class="secondary" hidden data-i18n="ui.cancel">Abbrechen</button>
   </div>
 
   <section id="progress" class="progress" hidden>
@@ -80,10 +88,11 @@
   </section>
 
   <details id="log-box" hidden>
-    <summary>Protokoll</summary>
+    <summary data-i18n="ui.log">Protokoll</summary>
     <div id="log" class="log"></div>
   </details>
 
+  <script src="../lib/i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
