@@ -33,13 +33,16 @@
     }, 120000);
   }
 
-  function start(course, options) {
+  function start({ course, courses, options }) {
+    const single = !courses || courses.length <= 1;
     crawler
       .run({
         course,
+        courses,
         options,
-        rootDoc: document,
-        rootUrl: location.href,
+        // Die bereits geladene Seite hilft nur, wenn genau dieser Kurs dran ist.
+        rootDoc: single ? document : null,
+        rootUrl: single ? location.href : null,
         onEvent: emit,
         download,
       })
@@ -65,8 +68,12 @@
 
     if (msg.cmd === "start") {
       if (crawler.isRunning()) return Promise.resolve({ ok: false, error: "Es läuft bereits ein Download." });
-      start(msg.course, msg.options);
+      start(msg);
       return Promise.resolve({ ok: true });
+    }
+
+    if (msg.cmd === "discover") {
+      return crawler.discoverCourses(msg.baseUrl || location.href);
     }
 
     if (msg.cmd === "cancel") {

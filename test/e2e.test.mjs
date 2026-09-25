@@ -82,7 +82,7 @@ try {
     rootDoc: w.document,
     rootUrl: `${BASE}/course/view.php?id=2`,
     options: {
-      files: true, texts: true, images: true, forums: true,
+      files: true, texts: true, images: true, forums: true, submissions: true,
       allSections: true, format: "both", maxFileMB: 0, delay: 0,
     },
     onEvent: (type, payload) => {
@@ -152,7 +152,18 @@ print(json.dumps({"bad": bad, "names": names, "texts": texts, "blobs": blobs}))
   check("Ordnerinhalte geladen",
     has("Übungsblätter/Uebung1.pdf") && has("Übungsblätter/Uebung2.docx"),
     names.filter((n) => n.includes("Uebung")).join(" | "));
-  check("Aufgabenanhang geladen", has("Aufgabenblatt.pdf"));
+  check("Aufgabenanhang des Lehrenden geladen", has("Aufgabenblatt.pdf"));
+  check("Eigene Abgabe liegt im eigenen Unterordner",
+    has("Meine Abgabe/Meine_Loesung.pdf"),
+    names.filter((n) => n.includes("Loesung") || n.includes("Korrektur")).join(" | "));
+  check("Feedbackdatei liegt beim eigenen Abgabeordner",
+    has("Meine Abgabe/Korrektur.pdf"));
+  check("Abgabestatus als eigene Notiz gesichert",
+    textOf("Abgabe Übung 1 - Meine Abgabe.md").includes("87 von 100"),
+    names.filter((n) => n.includes("Meine Abgabe")).join(" | "));
+  check("Aufgabenstellung bleibt ohne persönliche Daten",
+    textOf("03 Woche 2- Vertiefung/03 Abgabe Übung 1.md").includes("Aufgaben auf dem Blatt") &&
+    !textOf("03 Woche 2- Vertiefung/03 Abgabe Übung 1.md").includes("87 von 100"));
 
   check("Bilder liegen im Bilderordner",
     has("/_bilder/banner.png") && has("/_bilder/diagramm.png"),
@@ -260,6 +271,70 @@ print(json.dumps({"bad": bad, "names": names, "texts": texts, "blobs": blobs}))
     logs.filter((l) => l.startsWith("error")).join(" | "));
 
   console.log(`\n${names.length} Einträge im Archiv, ${(fs.statSync(zipPath).size / 1024).toFixed(1)} KB`);
+
+  // ------------------------------------------------------------------
+  // Durchlauf B: Kurse des Nutzers ermitteln
+  // ------------------------------------------------------------------
+  console.log("\n— Kurserkennung —");
+  const found = await w.MoodleCrawler.discoverCourses(`${BASE}/my/courses.php`);
+  check("Kursliste wird gefunden", found.ok && found.courses.length === 2,
+    found.ok ? `${found.courses.length} Kurse über ${found.source}` : found.error);
+  check("Kurse kommen aus Moodles Webservice", found.source === "webservice", found.source);
+  check("Kursnamen und absolute Adressen stimmen",
+    found.courses.some((c) => c.name === "Einführung in die Informatik" && c.url === `${BASE}/course/view.php?id=2`) &&
+    found.courses.some((c) => c.name === "Mathematik 1" && c.url === `${BASE}/course/view.php?id=3`),
+    JSON.stringify(found.courses));
+
+  // ------------------------------------------------------------------
+  // Durchlauf C: alle Kurse in ein Archiv, ohne eigene Abgaben
+  // ------------------------------------------------------------------
+  console.log("\n— Alle Kurse, ohne eigene Abgaben —");
+  captured = null;
+  const multi = await w.MoodleCrawler.run({
+    courses: found.courses,
+    options: {
+      files: true, texts: true, images: true, forums: false, submissions: false,
+      allSections: true, format: "md", combine: "single", maxFileMB: 0, delay: 0,
+    },
+    onEvent: () => {},
+    download: (blob, filename) => {
+      captured = blob;
+      downloadedName = filename;
+    },
+  });
+
+  check("Ein gemeinsames Archiv für alle Kurse",
+    (multi.archives || []).length === 1 && /^Moodle-Kurse \d{4}-\d{2}-\d{2}\.zip$/.test(multi.filename),
+    multi.filename);
+
+  const multiPath = path.join(outDir, "alle-kurse.zip");
+  fs.writeFileSync(multiPath, Buffer.from(await captured.arrayBuffer()));
+  const multiZip = JSON.parse(execFileSync("python3", [inspector, multiPath], {
+    encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
+  }));
+  const multiNames = multiZip.names;
+  const multiHas = (needle) => multiNames.some((n) => n.includes(needle));
+
+  check("Archiv ist fehlerfrei", multiZip.bad === null, String(multiZip.bad));
+  check("Beide Kurse liegen in eigenen Ordnern",
+    multiHas("Einführung in die Informatik/") && multiHas("Mathematik 1/"),
+    [...new Set(multiNames.map((n) => n.split("/")[0]))].join(" | "));
+  check("Übersicht über alle Kurse vorhanden",
+    multiHas("Alle Kurse.md") &&
+    multiZip.texts["Alle Kurse.md"].includes("Mathematik 1") &&
+    multiZip.texts["Alle Kurse.md"].includes("Einführung in die Informatik"));
+  check("Inhalte des zweiten Kurses gesichert",
+    multiHas("Mathematik 1/01 Zahlenbereiche/01 Mengenlehre.md"),
+    multiNames.filter((n) => n.startsWith("Mathematik 1/")).join(" | "));
+
+  check("Arbeitsblatt des Lehrenden ist dabei", multiHas("Aufgabenblatt.pdf"));
+  check("Eigene Abgabe wurde NICHT geladen", !multiHas("Meine_Loesung.pdf"),
+    multiNames.filter((n) => n.includes("Loesung")).join(" | "));
+  check("Feedbackdatei wurde NICHT geladen", !multiHas("Korrektur.pdf"));
+  check("Bewertung taucht nirgends im Text auf",
+    !Object.values(multiZip.texts).some((t) => t.includes("87 von 100")));
+
+  console.log(`\n${multiNames.length} Einträge im Sammelarchiv, ${(fs.statSync(multiPath).size / 1024).toFixed(1)} KB`);
   fs.rmSync(inspector, { force: true });
 } finally {
   server.kill();

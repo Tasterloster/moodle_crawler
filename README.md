@@ -5,6 +5,9 @@ alle Texte, alle Links und alle im Kurs eingebetteten Bilder** landen in einer
 einzigen ZIP-Datei — sortiert nach Kursabschnitten, offline lesbar und
 standardmäßig als **Markdown für Obsidian**.
 
+Wahlweise für den geöffneten Kurs oder **für alle Kurse auf einmal**, in die du
+eingeschrieben bist.
+
 Der Download läuft **im Hintergrund**: Tab wechseln, weiterarbeiten oder den
 Kurs-Tab schließen ist erlaubt, während gesichert wird.
 
@@ -25,7 +28,8 @@ Hintergrund und keine Telemetrie.
 | Beschreibungstext unter einer Aktivität | in `Kurs-Texte.md`; enthält er Bilder oder Dateien, zusätzlich als eigene Notiz |
 | Forum (optional) | eine Notiz je Diskussion |
 | Link (`url`) | Eintrag in `Links.md` |
-| Aufgabe, Test, sonstige | Beschreibungstext + angehängte Dateien |
+| Aufgabe (`assign`) | Aufgabenstellung + Arbeitsblätter; auf Wunsch zusätzlich deine Abgabe, Bewertung und Feedbackdateien |
+| Test und sonstige | Beschreibungstext + angehängte Dateien |
 
 Zusätzlich entstehen im Archiv:
 
@@ -54,11 +58,17 @@ Einführung in die Informatik/
 │   ├── 00 Abschnittstext.md
 │   ├── 01 Wichtiger Hinweis ….md
 │   └── 02 Skript.pdf
-└── 02 Woche 1 - Grundlagen/
-    ├── 01 Lernziele Woche 1.md
-    └── 02 Übungsblätter/
-        ├── Uebung1.pdf
-        └── Uebung2.docx
+├── 02 Woche 1 - Grundlagen/
+│   ├── 01 Lernziele Woche 1.md
+│   └── 02 Übungsblätter/
+│       ├── Uebung1.pdf
+│       └── Uebung2.docx
+└── 03 Woche 2 - Vertiefung/
+    ├── 03 Abgabe Übung 1.md              ← Aufgabenstellung
+    ├── 03 Abgabe Übung 1 - Meine Abgabe.md
+    └── 03 Abgabe Übung 1 - Meine Abgabe/ ← eigene Dateien, getrennt
+        ├── Meine_Loesung.pdf
+        └── Korrektur.pdf
 ```
 
 Der oberste Ordner heißt genau wie der Kurs in Moodle; nur für Dateisysteme
@@ -78,6 +88,46 @@ Auch Inhalte, die zu keiner eigenen Aktivität gehören, werden erfasst:
   zusätzlich in `Links.md` gesammelt, jeweils mit der Angabe, wo im Kurs sie
   gefunden wurden. Verweise auf Moodle-Dateien tauchen dort nicht auf, weil
   die Dateien selbst heruntergeladen werden.
+
+### Eigene Abgaben
+
+Auf Aufgabenseiten liegen drei verschiedene Sorten Dateien nebeneinander. Der
+Crawler unterscheidet sie anhand der Moodle-Dateikomponente:
+
+| Sorte | Moodle-Komponente | Wohin |
+| --- | --- | --- |
+| Arbeitsblätter des Lehrenden | `mod_assign/introattachment` | direkt in den Abschnittsordner |
+| Deine hochgelösten Abgaben | `assignsubmission_*` | Unterordner `… - Meine Abgabe/` |
+| Bewertung und Feedbackdateien | `assignfeedback_*` | derselbe Unterordner |
+
+Die Option **„Eigene Abgaben & Feedback"** steuert die letzten beiden Zeilen.
+Ist sie aus, werden deine Uploads, deine Note und die Korrekturen weder
+heruntergeladen noch im Text erwähnt — dann bleibt nur das Kursmaterial übrig,
+das man z. B. bedenkenlos weitergeben kann. Dasselbe gilt für Abgaben bei
+„Gegenseitiger Beurteilung" (`mod_workshop`).
+
+## Alle Kurse auf einmal
+
+Im Popup lässt sich von **„Nur dieser Kurs"** auf **„Alle meine Kurse"**
+umschalten. Dann passiert Folgendes:
+
+1. Ein Klick auf **„Kurse suchen"** fragt Moodles eigenen Webservice
+   (`core_course_get_enrolled_courses_by_timeline_classification`) nach allen
+   Kursen, in die du eingeschrieben bist — auch versteckte und abgelaufene.
+   Klappt das nicht (ältere Moodle-Version, abgeschalteter Dienst), werden
+   ersatzweise die Kurslinks von `/my/courses.php` ausgelesen.
+2. Die gefundenen Kurse erscheinen als Liste mit Häkchen, alle vorausgewählt.
+   Was du nicht brauchst, hakst du ab.
+3. Der Knopf zeigt dann z. B. „7 Kurse herunterladen".
+
+Über die Option **Mehrere Kurse** wählst du, wie gespeichert wird:
+
+* **Ein Archiv pro Kurs** (Standard) — je Kurs eine ZIP-Datei, nacheinander
+  gespeichert. Schont den Arbeitsspeicher, weil immer nur ein Kurs gleichzeitig
+  im RAM liegt. Bei vielen oder großen Kursen die sichere Wahl.
+* **Alles in einem Archiv** — eine ZIP-Datei mit einem Ordner je Kurs und einer
+  zusätzlichen Notiz `Alle Kurse.md`, die auf alle Kurse verlinkt. Praktisch
+  fürs Archiv, braucht aber Speicher für **alle** Kurse zusammen.
 
 ## Obsidian
 
@@ -133,12 +183,15 @@ Firefox installiert dauerhaft nur **signierte** Add-ons. Es gibt zwei Wege:
    also eine Adresse der Form `…/course/view.php?id=123`).
 2. Auf das Symbol **Moodle Crawler** klicken. Die Erweiterung zeigt den
    erkannten Kursnamen und die Zahl der gefundenen Elemente an.
-3. Optionen setzen und auf **„Kurs herunterladen"** klicken.
-4. Beim ersten Mal fragt Firefox nach Zugriff auf die Moodle-Adresse. Das ist
+3. Oben wählen, ob nur dieser Kurs oder **alle deine Kurse** gesichert werden
+   sollen. Bei „Alle meine Kurse" sucht ein erster Klick die Kurse und zeigt
+   sie zur Auswahl; der zweite Klick startet den Download.
+4. Optionen setzen und auf **„Kurs herunterladen"** klicken.
+5. Beim ersten Mal fragt Firefox nach Zugriff auf die Moodle-Adresse. Das ist
    nötig, damit der Download unabhängig vom Tab weiterläuft (siehe unten).
-5. Der Fortschritt läuft im Popup — das Popup darf geschlossen werden. Beim
+6. Der Fortschritt läuft im Popup — das Popup darf geschlossen werden. Beim
    nächsten Öffnen zeigt es den aktuellen Stand bzw. das letzte Ergebnis.
-6. Am Ende speichert Firefox die ZIP-Datei wie einen normalen Download.
+7. Am Ende speichert Firefox die ZIP-Datei wie einen normalen Download.
 
 ### Hintergrund oder Tab?
 
@@ -163,9 +216,11 @@ bleiben.
 | Dateien herunterladen | an | Lädt Dateien, Verzeichnisse und Anhänge |
 | Texte & Seiten speichern | an | Sichert Textseiten, Bücher und Textfelder |
 | Bilder aus Texten mitladen | an | Lädt eingebettete Bilder und verweist lokal darauf |
+| Eigene Abgaben & Feedback | an | Deine Uploads, Bewertungen und Korrekturen (siehe oben) |
 | Forenbeiträge einbeziehen | aus | Sichert jede Diskussion einzeln (kann lange dauern) |
 | Alle Abschnittsseiten durchsuchen | an | Nötig bei Kursformaten mit einer Seite je Abschnitt |
 | Format | Markdown | Markdown (Obsidian), HTML oder beides |
+| Mehrere Kurse | Ein Archiv pro Kurs | Nur im Modus „Alle meine Kurse" |
 | Max. Dateigröße | 0 (unbegrenzt) | Überspringt Dateien oberhalb der Grenze |
 | Pause je Anfrage | 150 ms | Schont den Moodle-Server; höher = langsamer, aber sanfter |
 
@@ -203,7 +258,7 @@ erfragt, auf dem dein Kurs liegt.
 manifest.json            Manifest (MV2, Firefox 115+)
 popup/                   Oberfläche der Erweiterung
 lib/zip.js               ZIP-Writer (Deflate + ZIP64, ohne Fremdbibliothek)
-lib/crawler.js           Kurs-Erkennung, Scraping, Markdown-Umwandlung, Archivaufbau
+lib/crawler.js           Kurs-Erkennung, Kursliste, Scraping, Markdown, Archivaufbau
 background/              Hintergrundseite: führt den Lauf unabhängig vom Tab aus
 content/agent.js         Content-Skript: Kurs-Erkennung und Ersatzweg im Tab
 test/                    Tests inkl. Fake-Moodle-Server
@@ -227,7 +282,8 @@ npm install jsdom      # nur für den End-to-End-Test nötig
 * `e2e.test.mjs` — startet einen Fake-Moodle-Server mit Moodle-4-DOM, lässt den
   echten Crawler in jsdom durchlaufen und prüft das erzeugte ZIP: Dateien
   hinter Weiterleitungen, Ordner, Buchkapitel, Foren, Bilder, Markdown-Umwandlung
-  und die gesammelten Links
+  und die gesammelten Links; dazu die Kurserkennung und ein Durchlauf über
+  mehrere Kurse ohne eigene Abgaben
 
 ### Paket bauen
 

@@ -13,6 +13,8 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 COURSE_NAME = "Einführung in die Informatik"
+SECOND_COURSE_NAME = "Mathematik 1"
+SESSKEY = "abc123XYZ"
 
 
 def png(width, height, rgb):
@@ -45,6 +47,8 @@ FILES = {
                      b"PK\x03\x04 fake docx"),
     "Aufgabenblatt.pdf": ("application/pdf", pdf("Aufgabenblatt")),
     "anhang.txt": ("text/plain", "Anhang mit Ümläuten\n".encode("utf-8")),
+    "Meine_Loesung.pdf": ("application/pdf", pdf("Meine Loesung")),
+    "Korrektur.pdf": ("application/pdf", pdf("Korrektur")),
     # Ohne Endung im Pfad: Name kommt nur aus Content-Disposition.
     "cheatsheet": ("application/pdf", pdf("Cheatsheet"), "Spickzettel.pdf"),
 }
@@ -138,23 +142,32 @@ COURSE_INDEX = """
 </ul></div>"""
 
 
-def course_page(section_param):
+SECTION_3 = section(0, "Zahlenbereiche", "<p>Grundlagen der Analysis.</p>",
+    [
+        activity(31, "page", "Mengenlehre", "/mod/page/view.php?id=31",
+                 "Kurze Wiederholung."),
+    ])
+
+
+def course_page(course_id, section_param):
     """Ohne section-Parameter: Abschnitte 0 und 1. Mit section=2: nur Abschnitt 2.
 
     Bildet ein Kursformat mit eigener Seite je Abschnitt nach – so wird
     geprüft, ob der Crawler weitere Abschnittsseiten nachlädt.
     """
-    if section_param == "2":
-        content = SECTION_2
+    if course_id == "3":
+        name, content, index = SECOND_COURSE_NAME, SECTION_3, ""
+    elif section_param == "2":
+        name, content, index = COURSE_NAME, SECTION_2, COURSE_INDEX
     else:
-        content = SECTION_0 + SECTION_1
-    body = f'{COURSE_INDEX}<div class="course-content"><ul class="topics">{content}</ul></div>'
+        name, content, index = COURSE_NAME, SECTION_0 + SECTION_1, COURSE_INDEX
+    body = f'{index}<div class="course-content"><ul class="topics">{content}</ul></div>'
     return f"""<!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8"><title>{COURSE_NAME}</title></head>
-<body id="page-course-view-topics" class="path-course path-course-view course-2 format-topics">
+<html lang="de"><head><meta charset="utf-8"><title>{name}</title></head>
+<body id="page-course-view-topics" class="path-course path-course-view course-{course_id} format-topics">
 <nav class="navbar"><a href="/">Start</a></nav>
 <header id="page-header"><div class="page-context-header"><div class="page-header-headings">
-<h1 class="h2">{COURSE_NAME}</h1></div></div></header>
+<h1 class="h2">{name}</h1></div></div></header>
 <div id="region-main"><div role="main">{body}</div></div>
 </body></html>"""
 
@@ -199,7 +212,24 @@ PAGES = {
   <div class="fileuploadsubmission">
     <a href="/pluginfile.php/1/mod_assign/introattachment/0/Aufgabenblatt.pdf">Aufgabenblatt.pdf</a>
   </div>
-</div>"""),
+</div>
+<table class="generaltable submissionstatustable">
+  <tbody>
+    <tr><th>Abgabestatus</th><td>Zur Bewertung abgegeben</td></tr>
+    <tr><th>Dateiabgaben</th><td>
+      <a href="/pluginfile.php/1/assignsubmission_file/submission_files/1/Meine_Loesung.pdf">Meine_Loesung.pdf</a>
+    </td></tr>
+    <tr><th>Bewertung</th><td>87 von 100</td></tr>
+    <tr><th>Feedbackdateien</th><td>
+      <a href="/pluginfile.php/1/assignfeedback_file/feedback_files/1/Korrektur.pdf">Korrektur.pdf</a>
+    </td></tr>
+  </tbody>
+</table>"""),
+
+    ("/mod/page/view.php", "31"): lambda: page("Mengenlehre", """
+<div class="box py-3 generalbox"><div class="no-overflow">
+  <p>Eine Menge ist eine Zusammenfassung von Objekten.</p>
+</div></div>"""),
 
     ("/mod/quiz/view.php", "19"): lambda: page("Selbsttest", """
 <div class="box generalbox"><p>Dieser Test besteht aus 10 Fragen.</p></div>"""),
@@ -234,6 +264,8 @@ PLUGINFILE_MAP = {
     "Uebung2.docx": "Uebung2.docx",
     "Aufgabenblatt.pdf": "Aufgabenblatt.pdf",
     "anhang.txt": "anhang.txt",
+    "Meine_Loesung.pdf": "Meine_Loesung.pdf",
+    "Korrektur.pdf": "Korrektur.pdf",
     "cheatsheet": "cheatsheet",
 }
 
@@ -256,8 +288,22 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self):
+        parsed = urlparse(self.path)
         length = int(self.headers.get("Content-Length") or 0)
         data = self.rfile.read(length)
+
+        if parsed.path == "/lib/ajax/service.php":
+            if parse_qs(parsed.query).get("sesskey", [""])[0] != SESSKEY:
+                return self.send_body(json.dumps([{"error": "invalidsesskey"}]), "application/json")
+            offset = json.loads(data)[0]["args"].get("offset", 0)
+            courses = [] if offset else [
+                {"id": 2, "fullname": COURSE_NAME, "viewurl": "/course/view.php?id=2"},
+                {"id": 3, "fullname": SECOND_COURSE_NAME, "viewurl": "/course/view.php?id=3"},
+            ]
+            return self.send_body(
+                json.dumps([{"error": False, "data": {"courses": courses, "nextoffset": len(courses)}}]),
+                "application/json")
+
         with open(sys.argv[2], "wb") as handle:
             handle.write(data)
         self.send_body(json.dumps({"ok": True, "bytes": len(data)}), "application/json")
@@ -269,8 +315,17 @@ class Handler(BaseHTTPRequestHandler):
         ident = (query.get("id") or [None])[0]
 
         if path == "/course/view.php":
-            return self.send_body(course_page((query.get("section") or [None])[0]),
-                                  "text/html; charset=utf-8")
+            return self.send_body(
+                course_page(ident or "2", (query.get("section") or [None])[0]),
+                "text/html; charset=utf-8")
+
+        if path in ("/my/courses.php", "/my/", "/"):
+            return self.send_body(page("Meine Kurse", f"""
+<a href="/login/logout.php?sesskey={SESSKEY}">Abmelden</a>
+<div class="courses">
+  <a href="/course/view.php?id=2">{COURSE_NAME}</a>
+  <a href="/course/view.php?id=3">{SECOND_COURSE_NAME}</a>
+</div>"""), "text/html; charset=utf-8")
 
         if path == "/mod/resource/view.php" and ident in ("12", "20"):
             target = ("/pluginfile.php/1/mod_resource/content/1/Skript.pdf" if ident == "12"

@@ -18,10 +18,24 @@
     <span id="course-meta" class="muted"></span>
   </section>
 
+  <section id="scope" class="scope" hidden>
+    <label><input type="radio" name="scope" value="current" checked> Nur dieser Kurs</label>
+    <label><input type="radio" name="scope" value="all"> Alle meine Kurse</label>
+  </section>
+
+  <section id="courselist" class="courselist" hidden>
+    <div class="courselist-head">
+      <span id="courselist-count" class="muted"></span>
+      <button type="button" id="toggle-all" class="link">alle ab-/auswählen</button>
+    </div>
+    <div id="courselist-items"></div>
+  </section>
+
   <section id="options" class="options" hidden>
     <label><input type="checkbox" id="opt-files" checked> Dateien herunterladen <span class="muted">(PDFs, Ordner, Anhänge)</span></label>
     <label><input type="checkbox" id="opt-texts" checked> Texte &amp; Seiten speichern</label>
     <label><input type="checkbox" id="opt-images" checked> Bilder aus Texten mitladen</label>
+    <label><input type="checkbox" id="opt-submissions" checked> Eigene Abgaben &amp; Feedback <span class="muted">(deine Uploads, Bewertungen)</span></label>
     <label><input type="checkbox" id="opt-forums"> Forenbeiträge einbeziehen <span class="muted">(langsam)</span></label>
     <label><input type="checkbox" id="opt-allsections" checked> Alle Abschnittsseiten durchsuchen</label>
 
@@ -33,7 +47,13 @@
         <option value="both">Markdown + HTML</option>
       </select>
     </div>
-
+    <div class="row" id="row-combine" hidden>
+      <label class="inline" for="opt-combine">Mehrere Kurse</label>
+      <select id="opt-combine">
+        <option value="separate">Ein Archiv pro Kurs</option>
+        <option value="single">Alles in einem Archiv</option>
+      </select>
+    </div>
     <div class="row">
       <label class="inline" for="opt-maxsize">Max. Dateigröße</label>
       <input type="number" id="opt-maxsize" min="0" step="10" value="0">
@@ -53,6 +73,7 @@
 
   <section id="progress" class="progress" hidden>
     <div id="mode-hint" class="muted"></div>
+    <div id="course-progress" class="muted"></div>
     <div class="bar"><div id="bar-fill"></div></div>
     <div id="progress-text" class="muted"></div>
     <div id="stats" class="muted"></div>

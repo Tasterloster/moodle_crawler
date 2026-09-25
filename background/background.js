@@ -7,6 +7,7 @@ const api = typeof browser !== "undefined" ? browser : chrome;
 const session = {
   mode: "idle", // idle | background | tab
   course: null,
+  courses: null,
   logs: [],
   last: null,
 };
@@ -54,13 +55,14 @@ async function download(blob, filename) {
   }
 }
 
-function startRun(course, options) {
+function startRun({ course, courses, options }) {
   session.mode = "background";
-  session.course = course;
+  session.course = course || (courses && courses[0]) || null;
+  session.courses = courses || null;
   session.logs = [];
   session.last = null;
 
-  window.MoodleCrawler.run({ course, options, onEvent, download }).catch((err) => {
+  window.MoodleCrawler.run({ course, courses, options, onEvent, download }).catch((err) => {
     session.mode = "idle";
     const message = err && err.message ? err.message : String(err);
     if (message === "__cancelled__") {
@@ -80,11 +82,15 @@ api.runtime.onMessage.addListener((msg) => {
     return window.MoodleCrawler.probe(msg.courseUrl);
   }
 
+  if (msg.cmd === "discover") {
+    return window.MoodleCrawler.discoverCourses(msg.baseUrl);
+  }
+
   if (msg.cmd === "start") {
     if (window.MoodleCrawler.isRunning()) {
       return Promise.resolve({ ok: false, error: "Es läuft bereits ein Download." });
     }
-    startRun(msg.course, msg.options);
+    startRun(msg);
     return Promise.resolve({ ok: true });
   }
 
@@ -98,6 +104,7 @@ api.runtime.onMessage.addListener((msg) => {
       ...window.MoodleCrawler.getStatus(),
       mode: session.mode,
       course: session.course,
+      courses: session.courses,
       logs: session.logs,
       last: session.last,
     });
