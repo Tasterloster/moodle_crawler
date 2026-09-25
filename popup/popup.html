@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+  <title>Moodle Crawler</title>
+</head>
+<body>
+  <header>
+    <img src="../icons/icon.svg" alt="" width="24" height="24">
+    <h1>Moodle Crawler</h1>
+  </header>
+
+  <div id="status" class="status status--wait">Kursseite wird geprüft …</div>
+
+  <section id="course" class="course" hidden>
+    <strong id="course-name"></strong>
+    <span id="course-meta" class="muted"></span>
+  </section>
+
+  <section id="options" class="options" hidden>
+    <label><input type="checkbox" id="opt-files" checked> Dateien herunterladen <span class="muted">(PDFs, Ordner, Anhänge)</span></label>
+    <label><input type="checkbox" id="opt-texts" checked> Texte &amp; Seiten speichern</label>
+    <label><input type="checkbox" id="opt-images" checked> Bilder aus Texten mitladen</label>
+    <label><input type="checkbox" id="opt-forums"> Forenbeiträge einbeziehen <span class="muted">(langsam)</span></label>
+    <label><input type="checkbox" id="opt-allsections" checked> Alle Abschnittsseiten durchsuchen</label>
+
+    <div class="row">
+      <label class="inline" for="opt-format">Format</label>
+      <select id="opt-format">
+        <option value="md">Markdown (Obsidian)</option>
+        <option value="html">HTML</option>
+        <option value="both">Markdown + HTML</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label class="inline" for="opt-maxsize">Max. Dateigröße</label>
+      <input type="number" id="opt-maxsize" min="0" step="10" value="0">
+      <span class="muted">MB (0 = unbegrenzt)</span>
+    </div>
+    <div class="row">
+      <label class="inline" for="opt-delay">Pause je Anfrage</label>
+      <input type="number" id="opt-delay" min="0" step="50" value="150">
+      <span class="muted">ms</span>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button id="start" disabled>Kurs herunterladen</button>
+    <button id="cancel" class="secondary" hidden>Abbrechen</button>
+  </div>
+
+  <section id="progress" class="progress" hidden>
+    <div id="mode-hint" class="muted"></div>
+    <div class="bar"><div id="bar-fill"></div></div>
+    <div id="progress-text" class="muted"></div>
+    <div id="stats" class="muted"></div>
+  </section>
+
+  <details id="log-box" hidden>
+    <summary>Protokoll</summary>
+    <div id="log" class="log"></div>
+  </details>
+
+  <script src="popup.js"></script>
+</body>
+</html>

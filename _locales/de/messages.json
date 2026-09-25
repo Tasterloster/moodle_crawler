@@ -1,0 +1,4 @@
+{
+  "extensionName":        { "message": "Moodle Crawler" },
+  "extensionDescription": { "message": "Lädt einen kompletten Moodle-Kurs (Dateien, Seiten, Texte) herunter und speichert alles in einer ZIP-Datei." }
+}

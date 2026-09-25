@@ -1,0 +1,37 @@
+{
+  "manifest_version": 2,
+  "name": "__MSG_extensionName__",
+  "version": "1.1.0",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "de",
+  "browser_action": {
+    "default_title": "__MSG_extensionName__",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "48": "icons/icon.svg",
+      "96": "icons/icon.svg"
+    }
+  },
+  "icons": {
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "downloads"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "moodle-crawler@tasterloster.github.io",
+      "strict_min_version": "115.0"
+    }
+  },
+  "optional_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "page": "background/background.html",
+    "persistent": true
+  }
+}
